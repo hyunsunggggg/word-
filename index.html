@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#5b5bd6" />
+  <meta name="description" content="CSV 파일로 단어장을 만들고 플래시카드와 퀴즈로 학습하는 앱" />
+  <title>WordSeed — CSV 단어 학습</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">W</div>
+        <div>
+          <strong>WordSeed</strong>
+          <span>CSV 단어 학습</span>
+        </div>
+      </div>
+
+      <nav class="nav" aria-label="주요 메뉴">
+        <button class="nav-item active" data-view="dashboard">
+          <span>⌂</span> 대시보드
+        </button>
+        <button class="nav-item" data-view="upload">
+          <span>＋</span> CSV 업로드
+        </button>
+        <button class="nav-item" data-view="words">
+          <span>▤</span> 단어 목록
+        </button>
+        <button class="nav-item" data-view="flashcards">
+          <span>◇</span> 플래시카드
+        </button>
+        <button class="nav-item" data-view="quiz">
+          <span>✓</span> 퀴즈
+        </button>
+        <button class="nav-item" data-view="stats">
+          <span>▥</span> 학습 통계
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <label for="deckSelect">현재 단어장</label>
+        <select id="deckSelect" aria-label="현재 단어장 선택"></select>
+        <button class="btn btn-ghost btn-block" id="newDeckBtn">새 단어장</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <button class="icon-btn menu-btn" id="menuBtn" aria-label="메뉴 열기">☰</button>
+        <div>
+          <p class="eyebrow" id="pageEyebrow">VOCABULARY</p>
+          <h1 id="pageTitle">대시보드</h1>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn btn-secondary" id="downloadSampleBtn">샘플 CSV</button>
+          <button class="btn btn-primary" data-go="upload">CSV 업로드</button>
+        </div>
+      </header>
+
+      <section class="content">
+        <!-- Dashboard -->
+        <div class="view active" id="view-dashboard">
+          <div class="hero card">
+            <div>
+              <span class="pill">오늘도 한 걸음 🌱</span>
+              <h2><span id="heroDeckName">나의 단어장</span>을<br />꾸준히 학습해 보세요.</h2>
+              <p>CSV로 단어를 추가하고, 플래시카드와 퀴즈로 반복 학습할 수 있습니다.</p>
+              <div class="hero-actions">
+                <button class="btn btn-primary" data-go="flashcards">학습 시작</button>
+                <button class="btn btn-secondary" data-go="quiz">퀴즈 풀기</button>
+              </div>
+            </div>
+            <div class="hero-visual" aria-hidden="true">
+              <div class="mini-card card-back"></div>
+              <div class="mini-card card-front">
+                <small>WORD OF THE DAY</small>
+                <strong id="heroWord">improve</strong>
+                <span id="heroMeaning">향상하다</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="metric-grid">
+            <article class="metric card">
+              <div class="metric-icon violet">A</div>
+              <div><span>전체 단어</span><strong id="metricTotal">0</strong></div>
+            </article>
+            <article class="metric card">
+              <div class="metric-icon green">✓</div>
+              <div><span>암기한 단어</span><strong id="metricMastered">0</strong></div>
+            </article>
+            <article class="metric card">
+              <div class="metric-icon orange">↗</div>
+              <div><span>평균 정답률</span><strong id="metricAccuracy">0%</strong></div>
+            </article>
+            <article class="metric card">
+              <div class="metric-icon blue">◷</div>
+              <div><span>학습 횟수</span><strong id="metricSessions">0</strong></div>
+            </article>
+          </div>
+
+          <div class="dashboard-grid">
+            <article class="card section-card">
+              <div class="section-heading">
+                <div>
+                  <p class="eyebrow">PROGRESS</p>
+                  <h3>학습 진행률</h3>
+                </div>
+                <strong id="progressPercent">0%</strong>
+              </div>
+              <div class="progress-track"><div id="progressBar"></div></div>
+              <p class="muted" id="progressText">단어를 업로드하고 학습을 시작하세요.</p>
+            </article>
+
+            <article class="card section-card">
+              <div class="section-heading">
+                <div>
+                  <p class="eyebrow">RECENT</p>
+                  <h3>최근 학습</h3>
+                </div>
+              </div>
+              <div id="recentActivity" class="empty-compact">아직 학습 기록이 없습니다.</div>
+            </article>
+          </div>
+        </div>
+
+        <!-- Upload -->
+        <div class="view" id="view-upload">
+          <div class="stepper" aria-label="업로드 단계">
+            <div class="step active" data-step-indicator="1"><b>1</b><span>파일 선택</span></div>
+            <div class="step-line"></div>
+            <div class="step" data-step-indicator="2"><b>2</b><span>미리보기</span></div>
+            <div class="step-line"></div>
+            <div class="step" data-step-indicator="3"><b>3</b><span>저장</span></div>
+          </div>
+
+          <div class="card upload-card">
+            <div id="uploadStage">
+              <div class="upload-zone" id="dropZone" tabindex="0" role="button" aria-label="CSV 파일 선택">
+                <div class="upload-icon">⇧</div>
+                <h2>CSV 파일을 여기에 놓으세요</h2>
+                <p>또는 버튼을 눌러 파일을 선택하세요.</p>
+                <button class="btn btn-primary" id="chooseFileBtn">파일 선택</button>
+                <input type="file" id="fileInput" accept=".csv,text/csv" hidden />
+                <small>필수 열: 어휘, 품사, 뜻 · UTF-8 권장</small>
+              </div>
+
+              <div class="format-help">
+                <div>
+                  <h3>CSV 작성 예시</h3>
+                  <p>뜻에 쉼표가 포함되면 큰따옴표로 감싸주세요.</p>
+                </div>
+                <pre>어휘,품사,뜻
+improve,v.,향상하다
+keep,phr.,"일지를 쓰다, 기록을 남기다"</pre>
+              </div>
+            </div>
+
+            <div id="previewStage" hidden>
+              <div class="preview-toolbar">
+                <div>
+                  <p class="eyebrow">PREVIEW</p>
+                  <h2 id="previewFileName">업로드 미리보기</h2>
+                  <p class="muted" id="previewSummary"></p>
+                </div>
+                <button class="btn btn-ghost" id="resetUploadBtn">다른 파일 선택</button>
+              </div>
+
+              <div id="validationMessages"></div>
+
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th>#</th><th>어휘</th><th>품사</th><th>뜻</th><th>상태</th></tr></thead>
+                  <tbody id="previewTableBody"></tbody>
+                </table>
+              </div>
+
+              <div class="save-panel">
+                <label>
+                  저장할 단어장
+                  <select id="uploadDeckSelect"></select>
+                </label>
+                <label id="newDeckNameWrap" hidden>
+                  새 단어장 이름
+                  <input id="newDeckNameInput" type="text" maxlength="40" placeholder="예: 수능 영어" />
+                </label>
+                <button class="btn btn-primary" id="saveWordsBtn">유효한 단어 저장</button>
+              </div>
+            </div>
+
+            <div id="completeStage" class="complete-stage" hidden>
+              <div class="success-mark">✓</div>
+              <h2>단어를 저장했습니다!</h2>
+              <p id="completeMessage"></p>
+              <div class="hero-actions">
+                <button class="btn btn-primary" data-go="flashcards">바로 학습하기</button>
+                <button class="btn btn-secondary" data-go="words">단어 목록 보기</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Words -->
+        <div class="view" id="view-words">
+          <div class="card section-card">
+            <div class="list-toolbar">
+              <div class="search-wrap">
+                <span>⌕</span>
+                <input id="wordSearch" type="search" placeholder="단어 또는 뜻 검색" />
+              </div>
+              <select id="masteryFilter" aria-label="암기 상태 필터">
+                <option value="all">전체 상태</option>
+                <option value="new">미학습</option>
+                <option value="learning">학습 중</option>
+                <option value="mastered">암기 완료</option>
+              </select>
+              <button class="btn btn-secondary" id="addWordBtn">단어 추가</button>
+            </div>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>어휘</th><th>품사</th><th>뜻</th><th>학습 상태</th><th>정답률</th><th></th></tr>
+                </thead>
+                <tbody id="wordTableBody"></tbody>
+              </table>
+            </div>
+            <div class="pagination-info" id="wordCountInfo"></div>
+          </div>
+        </div>
+
+        <!-- Flashcards -->
+        <div class="view" id="view-flashcards">
+          <div class="study-header">
+            <div>
+              <p class="eyebrow">FLASHCARDS</p>
+              <h2>카드를 눌러 뜻을 확인하세요.</h2>
+            </div>
+            <div class="study-options">
+              <label><input type="checkbox" id="shuffleCards" /> 섞기</label>
+              <select id="cardScope">
+                <option value="all">전체 단어</option>
+                <option value="learning">미암기 단어</option>
+                <option value="wrong">자주 틀린 단어</option>
+              </select>
+              <button class="btn btn-secondary" id="restartCardsBtn">다시 시작</button>
+            </div>
+          </div>
+
+          <div id="flashcardEmpty" class="card empty-state" hidden>
+            <div>◇</div><h2>학습할 단어가 없습니다.</h2>
+            <p>먼저 CSV 파일을 업로드하거나 단어를 추가하세요.</p>
+            <button class="btn btn-primary" data-go="upload">CSV 업로드</button>
+          </div>
+
+          <div id="flashcardArea">
+            <div class="study-progress">
+              <span id="cardCounter">1 / 1</span>
+              <div class="progress-track"><div id="cardProgress"></div></div>
+            </div>
+
+            <div class="flashcard" id="flashcard" role="button" tabindex="0" aria-label="카드 뒤집기">
+              <div class="flashcard-inner">
+                <div class="flashcard-face flashcard-front">
+                  <span class="card-label">WORD</span>
+                  <strong id="cardWord">improve</strong>
+                  <span class="part-badge" id="cardPart">v.</span>
+                  <small>카드를 눌러 뜻 보기</small>
+                </div>
+                <div class="flashcard-face flashcard-back">
+                  <span class="card-label">MEANING</span>
+                  <strong id="cardMeaning">향상하다</strong>
+                  <button class="speak-btn" id="speakBtn" type="button">🔊 발음 듣기</button>
+                  <small>카드를 눌러 단어 보기</small>
+                </div>
+              </div>
+            </div>
+
+            <div class="rating-area" id="ratingArea">
+              <p>이 단어를 얼마나 알고 있나요?</p>
+              <div class="rating-buttons">
+                <button class="rating again" data-rating="again"><b>1</b> 몰라요</button>
+                <button class="rating hard" data-rating="hard"><b>2</b> 어려워요</button>
+                <button class="rating good" data-rating="good"><b>3</b> 알아요</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quiz -->
+        <div class="view" id="view-quiz">
+          <div id="quizSetup" class="card quiz-setup">
+            <span class="pill">QUIZ</span>
+            <h2>퀴즈 설정</h2>
+            <p>학습할 문제 유형과 개수를 선택하세요.</p>
+            <div class="setup-grid">
+              <label>
+                문제 유형
+                <select id="quizType">
+                  <option value="word-to-meaning">영어 → 뜻</option>
+                  <option value="meaning-to-word">뜻 → 영어</option>
+                  <option value="mixed">혼합</option>
+                </select>
+              </label>
+              <label>
+                문제 수
+                <select id="quizCount">
+                  <option value="5">5문제</option>
+                  <option value="10" selected>10문제</option>
+                  <option value="20">20문제</option>
+                  <option value="all">전체</option>
+                </select>
+              </label>
+            </div>
+            <button class="btn btn-primary btn-large" id="startQuizBtn">퀴즈 시작</button>
+          </div>
+
+          <div id="quizPlay" hidden>
+            <div class="study-progress">
+              <span id="quizCounter">1 / 10</span>
+              <div class="progress-track"><div id="quizProgress"></div></div>
+              <strong id="quizScore">0점</strong>
+            </div>
+            <article class="card quiz-card">
+              <span class="card-label" id="quizPromptLabel">다음 단어의 뜻은?</span>
+              <h2 id="quizPrompt">improve</h2>
+              <div class="quiz-options" id="quizOptions"></div>
+              <div id="quizFeedback" class="quiz-feedback" hidden></div>
+              <button class="btn btn-primary" id="nextQuestionBtn" hidden>다음 문제</button>
+            </article>
+          </div>
+
+          <div id="quizResult" class="card quiz-result" hidden>
+            <div class="result-ring" id="resultRing"><strong id="resultPercent">0%</strong></div>
+            <h2>퀴즈 완료!</h2>
+            <p id="resultSummary"></p>
+            <div class="result-stats">
+              <div><span>정답</span><strong id="resultCorrect">0</strong></div>
+              <div><span>오답</span><strong id="resultWrong">0</strong></div>
+              <div><span>총 문제</span><strong id="resultTotal">0</strong></div>
+            </div>
+            <div class="hero-actions">
+              <button class="btn btn-primary" id="retryQuizBtn">다시 풀기</button>
+              <button class="btn btn-secondary" data-go="stats">통계 보기</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="view" id="view-stats">
+          <div class="metric-grid">
+            <article class="metric card">
+              <div class="metric-icon violet">%</div>
+              <div><span>전체 정답률</span><strong id="statsAccuracy">0%</strong></div>
+            </article>
+            <article class="metric card">
+              <div class="metric-icon green">✓</div>
+              <div><span>암기 완료</span><strong id="statsMastered">0</strong></div>
+            </article>
+            <article class="metric card">
+              <div class="metric-icon orange">↻</div>
+              <div><span>총 복습 횟수</span><strong id="statsReviews">0</strong></div>
+            </article>
+            <article class="metric card">
+              <div class="metric-icon blue">★</div>
+              <div><span>최고 퀴즈 점수</span><strong id="statsBest">0%</strong></div>
+            </article>
+          </div>
+
+          <div class="dashboard-grid stats-grid">
+            <article class="card section-card">
+              <div class="section-heading"><div><p class="eyebrow">MASTERY</p><h3>암기 상태</h3></div></div>
+              <div class="donut-wrap">
+                <div class="donut" id="masteryDonut"><div><strong id="donutPercent">0%</strong><span>완료</span></div></div>
+                <div class="legend">
+                  <div><i class="dot mastered"></i><span>암기 완료</span><strong id="legendMastered">0</strong></div>
+                  <div><i class="dot learning"></i><span>학습 중</span><strong id="legendLearning">0</strong></div>
+                  <div><i class="dot new"></i><span>미학습</span><strong id="legendNew">0</strong></div>
+                </div>
+              </div>
+            </article>
+
+            <article class="card section-card">
+              <div class="section-heading"><div><p class="eyebrow">DIFFICULT</p><h3>어려운 단어</h3></div></div>
+              <div id="difficultWords" class="rank-list"></div>
+            </article>
+          </div>
+
+          <article class="card section-card">
+            <div class="section-heading">
+              <div><p class="eyebrow">HISTORY</p><h3>최근 퀴즈 기록</h3></div>
+              <button class="btn btn-ghost danger-text" id="resetProgressBtn">학습 기록 초기화</button>
+            </div>
+            <div id="quizHistory" class="history-list"></div>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Word modal -->
+  <dialog id="wordModal">
+    <form method="dialog" id="wordForm">
+      <div class="modal-heading">
+        <div><p class="eyebrow">WORD</p><h2 id="wordModalTitle">단어 추가</h2></div>
+        <button class="icon-btn dialog-close" type="button" aria-label="닫기">×</button>
+      </div>
+      <input type="hidden" id="editWordId" />
+      <label>어휘<input id="wordInput" required maxlength="100" placeholder="예: improve" /></label>
+      <label>품사<input id="partInput" maxlength="30" placeholder="예: v." /></label>
+      <label>뜻<textarea id="meaningInput" required maxlength="500" rows="4" placeholder="예: 향상하다"></textarea></label>
+      <div class="modal-actions">
+        <button class="btn btn-secondary dialog-close" type="button">취소</button>
+        <button class="btn btn-primary" id="submitWordBtn" value="default">저장</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Deck modal -->
+  <dialog id="deckModal">
+    <form method="dialog" id="deckForm">
+      <div class="modal-heading">
+        <div><p class="eyebrow">DECK</p><h2>새 단어장</h2></div>
+        <button class="icon-btn dialog-close" type="button" aria-label="닫기">×</button>
+      </div>
+      <label>단어장 이름<input id="deckNameInput" required maxlength="40" placeholder="예: 토익 필수 단어" /></label>
+      <div class="modal-actions">
+        <button class="btn btn-secondary dialog-close" type="button">취소</button>
+        <button class="btn btn-primary" id="submitDeckBtn" value="default">만들기</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="app.js"></script>
+</body>
+</html>
